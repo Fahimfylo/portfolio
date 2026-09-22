@@ -18,10 +18,10 @@ const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toSt
 
 if (!MONGODB_URI) {
   console.error('MONGODB_URI is not set in .env');
-  process.exit(1);
+  throw new Error('MONGODB_URI is not set');
 }
 
-const app = express();
+export const app = express();
 app.use(cors({
   origin: true,
   credentials: true,
@@ -274,22 +274,45 @@ app.delete('/api/media/:id', requireAuth, async (req, res) => {
   res.json({ ok: result.deletedCount > 0 });
 });
 
-// Serve built frontend in production
-const distPath = path.join(__dirname, 'dist');
-app.use(express.static(distPath));
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(distPath, 'index.html'));
-});
+// Serve built frontend in production (local only; Vercel serves dist/ itself)
+if (!process.env.VERCEL) {
+  const distPath = path.join(__dirname, 'dist');
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
-connectDB()
-  .then(async () => {
-    await seedAdminUser();
+let connectPromise;
+
+export function connect() {
+  if (!connectPromise) {
+    connectPromise = (async () => {
+      await connectDB();
+      await seedAdminUser();
+    })().catch((err) => {
+      connectPromise = undefined;
+      throw err;
+    });
+  }
+  return connectPromise;
+}
+
+async function startLocal() {
+  try {
+    await connect();
     app.listen(PORT, () => {
       console.log(`API server running on http://localhost:${PORT}`);
     });
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error('Failed to connect to MongoDB:', err.message);
     process.exit(1);
-  });
+  }
+}
+
+if (process.env.VERCEL) {
+  console.log('Running on Vercel (serverless).');
+} else {
+  startLocal();
+}
