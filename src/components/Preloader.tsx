@@ -14,7 +14,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
     'INITIALIZING SYSTEM',
     'LOADING CORE MODULES',
     'RENDERING COMPONENT CANVAS',
-    'ALEX RIVERS / PORTFOLIO 2026'
+    'FAHIM RAHMAN / PORTFOLIO 2026'
   ];
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
             <div className="flex items-center space-x-3">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-xs uppercase tracking-widest text-white/80 font-bold">
-                ALEX RIVERS
+                FAHIM RAHMAN
               </span>
             </div>
             <div className="text-xs uppercase tracking-widest text-[#888888]">

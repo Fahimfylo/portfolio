@@ -7,7 +7,7 @@ const TERMINALS: {
   lines: { cmd?: boolean; ok?: boolean; text: string }[];
 }[] = [
   {
-    pos: [-1.0, 2.3, -0.9],
+    pos: [-1.6, 3.6, -1.4],
     lines: [
       { text: '$ docker compose up' },
       { cmd: false, text: 'api        running' },

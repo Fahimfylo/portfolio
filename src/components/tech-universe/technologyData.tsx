@@ -428,3 +428,116 @@ export function isRelated(selectedId: string | null, otherId: string): boolean {
   const tech = techById[selectedId];
   return !!tech && tech.related.includes(otherId);
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Constellation config - clusters, derived edges, stagger ordering.         */
+/* -------------------------------------------------------------------------- */
+
+export type ClusterId =
+  | 'frontend'
+  | 'backend'
+  | 'data'
+  | 'services'
+  | 'infra'
+  | 'ops';
+
+export interface ClusterDef {
+  id: ClusterId;
+  label: string;
+  hint: string;
+}
+
+/** Every tech declares a `category`; this maps categories onto the visible
+ *  constellation clusters so adding/removing a tech is a one-line change. */
+export const categoryToCluster: Record<string, ClusterId> = {
+  Frontend: 'frontend',
+  Backend: 'backend',
+  Architecture: 'backend',
+  Database: 'data',
+  Cache: 'data',
+  Auth: 'services',
+  Services: 'services',
+  DevOps: 'infra',
+  Cloud: 'infra',
+  Observability: 'ops',
+  Testing: 'ops',
+};
+
+export const clusterOrder: ClusterId[] = [
+  'frontend',
+  'backend',
+  'data',
+  'services',
+  'infra',
+  'ops',
+];
+
+export const clusters: ClusterDef[] = [
+  { id: 'frontend', label: 'FRONTEND', hint: 'UI layer' },
+  { id: 'backend', label: 'BACKEND / APIS', hint: 'Servers & interfaces' },
+  { id: 'data', label: 'DATA / CACHE', hint: 'Storage & fast lookup' },
+  { id: 'services', label: 'AUTH / SERVICES', hint: 'Identity & platforms' },
+  { id: 'infra', label: 'INFRA / CLOUD', hint: 'Deployment & orchestration' },
+  { id: 'ops', label: 'OBSERVABILITY / TESTING', hint: 'Metrics & quality' },
+];
+
+export const clusterOf = (t: Technology): ClusterId =>
+  categoryToCluster[t.category] ?? 'backend';
+
+/** Global stagger index (ms) used for the entrance animation (cluster-major
+ *  with an intra-cluster offset, both derived from the static data order). */
+export const staggerIndexOf = (t: Technology): number => {
+  const ci = clusterOrder.indexOf(clusterOf(t));
+  const intra = Math.max(0, technologies.indexOf(t));
+  return ci * 180 + intra * 16;
+};
+
+/** Entrance animation delay (s) for a tech chip. */
+export const introDelayOf = (t: Technology): number => 0.15 + staggerIndexOf(t) / 1000;
+
+/** Deterministic cluster centroid derived from member positions - static. */
+export function clusterCentroid(clusterId: ClusterId): { x: number; y: number; z: number } {
+  const members = technologies.filter((t) => clusterOf(t) === clusterId);
+  if (members.length === 0) return { x: 0, y: 0, z: 0 };
+  const sum = members.reduce(
+    (acc, t) => {
+      acc.x += t.position.x;
+      acc.y += t.position.y;
+      acc.z += t.position.z;
+      return acc;
+    },
+    { x: 0, y: 0, z: 0 },
+  );
+  return {
+    x: sum.x / members.length,
+    y: sum.y / members.length,
+    z: sum.z / members.length,
+  };
+}
+
+export interface Edge {
+  from: string;
+  to: string;
+}
+
+/** Edge list derived from each tech's `related[]` (deduped, undirected).
+ *  To hand-wire the constellation instead, fill `customEdges` below - the
+ *  derived list is skipped entirely when it's non-null. */
+export const customEdges: Edge[] | null = null;
+
+export const edges: Edge[] =
+  customEdges ??
+  (() => {
+    const seen = new Set<string>();
+    const out: Edge[] = [];
+    for (const t of technologies) {
+      for (const r of t.related) {
+        if (!techById[r]) continue;
+        const key = [t.id, r].sort().join('|');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({ from: t.id, to: r });
+      }
+    }
+    return out;
+  })();

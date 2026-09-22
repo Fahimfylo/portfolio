@@ -1,11 +1,12 @@
-import React, { useEffect, useRef } from 'react';
-import { motion } from 'motion/react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useInView, useMotionValueEvent, useScroll } from 'motion/react';
 import { UniverseProvider, useUniverse } from './UniverseContext';
 import { TechScene } from './TechScene';
 import { InfoCard } from './InfoCard';
 import { Instructions } from './Instructions';
 import { StaticFallback } from './StaticFallback';
 import { supportsWebGL, useIsMobile, useReducedMotion } from './hooks';
+import './tech-universe.css';
 
 /* -------------------------------------------------------------------------- */
 /*  WebGL error boundary – stops a GPU crash from taking down the whole site. */
@@ -23,13 +24,37 @@ class WebGLBoundary extends React.Component<{ fallback: React.ReactNode; childre
 /*  Inner component that can safely call useUniverse().                       */
 /* -------------------------------------------------------------------------- */
 const _UniverseInner: React.FC<{ isMobile: boolean; reduced: boolean }> = ({ isMobile, reduced }) => {
-  const { setSelectedId, rotTargetRef, pointerDragRef } = useUniverse();
-  const sectionRef = useRef<HTMLDivElement>(null);
+  const { setSelectedId, rotTargetRef, pointerDragRef, scrollProgressRef } = useUniverse();
+  const stageWrapRef = useRef<HTMLDivElement>(null);
 
-  const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+  /* ---- Scroll-driven camera / rotation ---------------------------------
+   * Desktop: the section body is 230vh tall and holds a full-viewport
+   * `position: sticky` stage. `scrollYProgress` therefore goes 0→1 across
+   * exactly the pin, so the camera can orbit from a wide constellation shot
+   * into the MERN cluster while the stage stays pinned to the viewport.
+   * Mobile: no pinning – the box scrolls past and the progress drives a
+   * simple scroll-linked rotation instead. The value is written straight
+   * into a mutable ref (no React re-render per frame) and consumed by the
+   * CameraRig / UniverseGroup inside the Canvas. */
+  const { scrollYProgress } = useScroll({
+    target: stageWrapRef,
+    offset: isMobile ? ['start end', 'end start'] : ['start start', 'end end'],
+  });
+
+  useMotionValueEvent(scrollYProgress, 'change', (v) => {
+    scrollProgressRef.current = v;
+  });
+
+  /* ---- Lazy init: only spin up WebGL once the stage approaches viewport,
+   *        then latch so scroll-away/back never tears down the GL context. */
+  const stageInView = useInView(stageWrapRef, { margin: '14% 0px' });
+  const [canvasMounted, setCanvasMounted] = useState(false);
+  useEffect(() => {
+    if (stageInView) setCanvasMounted(true);
+  }, [stageInView]);
 
   /* ---- Drag-to-rotate via window listeners (no pointer capture, so DOM
-           clicks inside the scene still reach their original targets) ---- */
+   *        clicks inside the scene still reach their original targets) ---- */
   const start = useRef({ x: 0, y: 0 });
   const winListening = useRef(false);
   const moveFns = useRef<{ m: (e: PointerEvent) => void; u: (e: PointerEvent) => void }>({
@@ -55,8 +80,10 @@ const _UniverseInner: React.FC<{ isMobile: boolean; reduced: boolean }> = ({ isM
     if (Math.abs(dx) + Math.abs(dy) > 6) {
       pointerDragRef.current.wasDrag = true;
       const power = reduced ? 0.15 : 1;
-      rotTargetRef.current.y = clamp(rotTargetRef.current.y + dx * 0.004 * power, -0.4, 0.4);
-      rotTargetRef.current.x = clamp(rotTargetRef.current.x + dy * 0.003 * power, -0.3, 0.3);
+      // Y is free (unbounded accumulation => full 360° spin); X is softly
+      // clamped so the globe pitches but never flips upside down.
+      rotTargetRef.current.y += dx * 0.005 * power;
+      rotTargetRef.current.x = Math.min(1.2, Math.max(-1.2, rotTargetRef.current.x + dy * 0.004 * power));
       start.current = { x: e.clientX, y: e.clientY };
     }
   };
@@ -87,20 +114,37 @@ const _UniverseInner: React.FC<{ isMobile: boolean; reduced: boolean }> = ({ isM
   };
 
   const webgl = supportsWebGL();
+  const canvasActive = webgl && canvasMounted;
+
+  const stageContent = (
+    <>
+      {webgl ? (
+        canvasActive ? (
+          <WebGLBoundary fallback={<StaticFallback isMobile={isMobile} />}>
+            <TechScene isMobile={isMobile} />
+          </WebGLBoundary>
+        ) : (
+          <div className="absolute inset-0 tech-stage-placeholder" aria-hidden="true" />
+        )
+      ) : (
+        <StaticFallback isMobile={isMobile} />
+      )}
+      {canvasActive && <InfoCard />}
+      {canvasActive && <Instructions />}
+    </>
+  );
 
   return (
     <section
       id="stack"
-      ref={sectionRef}
       onPointerDown={onPointerDown}
       onClick={onSectionClick}
-      className="dark-section relative bg-[#0A0A0A] text-[#E8E6E0] py-24 sm:py-28 px-6 md:px-12 border-t border-white/5 overflow-hidden"
+      className="dark-section relative bg-[#0A0A0A] text-[#E8E6E0] border-t border-white/5"
       style={{ touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none' }}
-      aria-label="Technology Universe - interactive 3D visualization of technologies"
+      aria-label="The stack behind my work - interactive 3D constellation of technologies"
     >
-      <div className="max-w-7xl mx-auto space-y-12 sm:space-y-16 select-none">
-
-        {/* ── Section Header (matches existing portfolio headline pattern) ── */}
+      {/* ── Section Header (matches existing portfolio headline pattern) ── */}
+      <div className="max-w-7xl mx-auto px-6 md:px-12 pt-24 sm:pt-28 pb-10 sm:pb-14 select-none">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-7">
             <motion.h2
@@ -122,7 +166,7 @@ const _UniverseInner: React.FC<{ isMobile: boolean; reduced: boolean }> = ({ isM
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xs font-mono uppercase tracking-widest text-[#888888]"
             >
-              (TECHNOLOGY UNIVERSE)
+              (TECHNOLOGY CONSTELLATION)
             </motion.div>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -131,31 +175,39 @@ const _UniverseInner: React.FC<{ isMobile: boolean; reduced: boolean }> = ({ isM
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-sm md:text-base text-[#888888] font-sans leading-relaxed max-w-xl"
             >
-              Explore the full stack, infrastructure, messaging and observability ecosystem that powers
-              production-grade applications — in an interactive 3D environment.
+              Explore the full stack, infrastructure, messaging and observability
+              ecosystem that powers production-grade applications — as a living
+              3D constellation. Scroll to fly through the graph.
             </motion.p>
           </div>
         </div>
 
-        <div className="w-full h-[1px] bg-white/10" />
+        <div className="w-full h-[1px] bg-white/10 mt-12 sm:mt-16" />
+      </div>
 
-        {/* ── 3D Canvas Container ── */}
-        <div
-          className="relative w-full rounded-2xl overflow-hidden border border-white/5"
-          style={{ height: isMobile ? 'clamp(380px, 56vh, 560px)' : 'clamp(480px, 66vh, 780px)' }}
-        >
-          {webgl ? (
-            <WebGLBoundary fallback={<StaticFallback isMobile={isMobile} />}>
-              <TechScene isMobile={isMobile} />
-            </WebGLBoundary>
-          ) : (
-            <StaticFallback isMobile={isMobile} />
-          )}
-
-          {/* DOM overlays sitting above the WebGL layer */}
-          <InfoCard />
-          <Instructions />
-        </div>
+      {/* ── Pinned 3D Stage ──
+           Desktop: 230vh wrapper + 100svh sticky stage => ~130vh of scrubbed
+           camera travel, then the sticky releases back into normal page flow.
+           Mobile: normal-height rounded box; progress scroll-rotates the graph. */}
+      <div
+        ref={stageWrapRef}
+        className="relative w-full"
+        style={isMobile ? { padding: '0 0 6rem' } : { height: '230vh' }}
+      >
+        {isMobile ? (
+          <div className="max-w-7xl mx-auto px-6">
+            <div
+              className="relative rounded-2xl overflow-hidden border border-white/5"
+              style={{ height: 'clamp(380px, 58vh, 560px)' }}
+            >
+              {stageContent}
+            </div>
+          </div>
+        ) : (
+          <div className="sticky top-0 relative w-full overflow-hidden" style={{ height: '100svh' }}>
+            {stageContent}
+          </div>
+        )}
       </div>
     </section>
   );

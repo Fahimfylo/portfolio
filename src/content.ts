@@ -87,13 +87,13 @@ export async function loadContent(): Promise<PortfolioContent> {
 
 export const portfolioData: PortfolioContent = {
   personal: {
-    name: "ALEX RIVERS",
+    name: "FAHIM RAHMAN",
     role: "Web Developer & Designer",
     heroSubtext: "I build high-throughput distributed applications, edge-rendered user interfaces, and resilient cloud backend architectures for high-growth tech enterprises.",
     availabilityStatus: "AVAILABLE FOR WORK",
     dateReadout: "AUG'26",
     portraitImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=1200",
-    email: "contact@alexrivers.dev",
+    email: "ghostpy91@gmail.com",
     cvUrl: "",
     aboutHeadline: "DEVELOPER / DESIGNER / CREATOR /",
     aboutBio: [

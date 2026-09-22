@@ -2,9 +2,6 @@
 
 .tech-chip {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
   background: transparent;
   border: 0;
   padding: 0;
@@ -20,6 +17,30 @@
   outline-offset: 4px;
   border-radius: 12px;
 }
+
+/* Inner wrapper carries the entrance stagger animation so the button's inline
+   `opacity` (used for dimming) is never clobbered by the keyframe fill. */
+.tech-chip-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  animation: chipIntro 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--intro-delay, 0ms);
+}
+@keyframes chipIntro {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.4);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
 .tech-chip-icon {
   display: flex;
   align-items: center;
@@ -47,6 +68,41 @@
 }
 .tech-chip:hover .tech-chip-label {
   color: #34d399;
+}
+
+/* Cluster captions - faint "(…)" eyebrows floating above each blob */
+.cluster-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #9a988f;
+  text-align: center;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  animation: labelfade 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.cluster-hint {
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  color: #5f5d56;
+}
+@keyframes labelfade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 0.55; transform: translateY(0); }
+}
+
+/* Soft radial glow shown while the WebGL surface lazy-loads */
+.tech-stage-placeholder {
+  background:
+    radial-gradient(ellipse at center, rgba(52, 211, 153, 0.05), transparent 60%),
+    #0a0a0a;
+  animation: placeholderpulse 2.6s ease-in-out infinite;
+}
+@keyframes placeholderpulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 .tech-terminal {
@@ -83,53 +139,52 @@
   color: #34d399;
 }
 
-.tech-code {
+/* Hover/selection mini-label - one shared element following the node */
+.tech-tooltip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 8.5px;
-  color: #b8b6ae;
-  background: rgba(20, 20, 20, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 3px 6px;
-  border-radius: 6px;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  user-select: none;
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  animation: labelfade 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.tech-code.fade {
-  animation: codefade 6s ease-in-out infinite;
-}
-@keyframes codefade {
-  0%, 100% { opacity: 0.16; }
-  50% { opacity: 0.4; }
-}
-
-.cache-chip {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 8px;
+.tech-tooltip-name {
+  font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 3px 7px;
-  border-radius: 5px;
-  animation: cacheping 2.8s ease-in-out infinite;
-  user-select: none;
+  color: #e8e6df;
+  white-space: nowrap;
 }
-.cache-chip.hit {
-  color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.4);
-  background: rgba(52, 211, 153, 0.1);
-}
-.cache-chip.miss {
-  color: #f472b6;
-  border: 1px solid rgba(244, 114, 182, 0.35);
-  background: rgba(244, 114, 182, 0.08);
-  animation-delay: 1.4s;
-}
-@keyframes cacheping {
-  0%, 100% { opacity: 0.05; transform: scale(0.92); }
-  50% { opacity: 0.9; transform: scale(1); }
+.tech-tooltip-desc {
+  font-size: 8px;
+  color: #9d9c96;
+  white-space: nowrap;
 }
 
 .universe-hint {
   font-family: 'JetBrains Mono', monospace;
   transition: opacity 0.6s ease;
+}
+
+/* Respect prefers-reduced-motion: no continuous animation, no blur/fade-in */
+@media (prefers-reduced-motion: reduce) {
+  .tech-chip-inner {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  .cluster-label {
+    animation: none;
+    opacity: 0.55;
+  }
+  .tech-stage-placeholder {
+    animation: none;
+  }
 }

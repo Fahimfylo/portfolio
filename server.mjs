@@ -36,12 +36,33 @@ let db;
 let sessions = new Map(); // token -> expiry
 
 async function connectDB() {
-  await client.connect();
-  db = client.db(DB_NAME);
-  // ensure indexes
-  await db.collection('sessions').createIndex({ token: 1 }, { unique: true });
-  await db.collection('sessions').createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 });
-  console.log(`Connected to MongoDB (${DB_NAME})`);
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Connecting to MongoDB (attempt ${attempt}/${maxRetries})...`);
+      await client.connect();
+      db = client.db(DB_NAME);
+      await db.collection('sessions').createIndex({ token: 1 }, { unique: true });
+      await db.collection('sessions').createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 });
+      console.log(`Connected to MongoDB (${DB_NAME})`);
+      return;
+    } catch (err) {
+      console.error(`Attempt ${attempt} failed: ${err.message}`);
+      if (err.message.includes('ECONNREFUSED') || err.message.includes('querySrv')) {
+        console.error('\n  Possible causes:');
+        console.error('  1. MongoDB Atlas cluster is paused — check https://cloud.mongodb.com');
+        console.error('  2. Your IP is not whitelisted — add it in Atlas Network Access settings');
+        console.error('  3. DNS cannot resolve the cluster — try a different network or DNS server');
+        console.error('');
+      }
+      if (attempt < maxRetries) {
+        const delay = attempt * 5000;
+        console.log(`Retrying in ${delay / 1000}s...`);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+  }
+  throw new Error('Could not connect to MongoDB after ' + maxRetries + ' attempts');
 }
 
 async function scryptHash(password, salt) {
@@ -235,9 +256,11 @@ app.get('/api/media/:id', async (req, res) => {
   }
   const doc = await db.collection('media').findOne({ _id: id });
   if (!doc) return res.status(404).json({ error: 'Not found' });
+  const buf = Buffer.isBuffer(doc.data) ? doc.data : Buffer.from(doc.data.buffer || doc.data);
   res.set('Content-Type', doc.contentType);
+  res.set('Content-Length', buf.length.toString());
   res.set('Cache-Control', 'public, max-age=31536000, immutable');
-  res.send(doc.data);
+  res.end(buf);
 });
 
 app.delete('/api/media/:id', requireAuth, async (req, res) => {
