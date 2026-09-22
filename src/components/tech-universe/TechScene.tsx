@@ -75,11 +75,15 @@ const UniverseGroup: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const k = Math.min(1, delta * (reduced ? 3.5 : 6));
     const sp = scrollProgressRef.current;
     const t = state.clock.elapsedTime;
-    const ambient = reduced ? 0 : (t * Math.PI * 2) / 28;
-    const wobble = reduced ? 0 : Math.sin(t * 0.35) * 0.06;
+    // Active by default: the globe tumbles on both axes (full Y revolution
+    // every ~24s, X every ~50s). Reduced motion only slows the pace to a
+    // gentle drift - it never freezes the scene entirely.
+    const speed = reduced ? 0.22 : 1;
+    const ySpin = (t * Math.PI * 2) / (28 / speed);
+    const xSpin = (t * Math.PI * 2) / (60 / speed);
     const scrollRot = (sp - 0.5) * 0.9;
-    rot.current.x += (rotTargetRef.current.x + wobble - rot.current.x) * k;
-    rot.current.y += (rotTargetRef.current.y + ambient + scrollRot - rot.current.y) * k;
+    rot.current.x += (rotTargetRef.current.x + xSpin - rot.current.x) * k;
+    rot.current.y += (rotTargetRef.current.y + ySpin + scrollRot - rot.current.y) * k;
     g.rotation.copy(rot.current);
   });
 
