@@ -13,7 +13,6 @@ const TechnologyUniverse = lazy(() =>
   })),
 );
 import { Footer } from './components/Footer';
-import { CustomizationBar } from './components/CustomizationBar';
 import { Preloader } from './components/Preloader';
 import { SmoothScrollProvider } from './components/SmoothScroll';
 import { CustomCursor } from './components/CustomCursor';
@@ -54,7 +53,6 @@ function PortfolioSite() {
               <ContactSection />
             </main>
             <Footer />
-            <CustomizationBar />
           </div>
         </div>
       </ContentProvider>
