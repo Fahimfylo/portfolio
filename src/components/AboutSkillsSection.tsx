@@ -31,12 +31,18 @@ export const AboutSkillsSection: React.FC = () => {
             <div className="pt-4">
               <div className="relative w-full max-w-xs aspect-[4/5] rounded-2xl p-2 bg-[#141414] border border-white/10 shadow-2xl">
                 <div className="w-full h-full rounded-xl overflow-hidden relative group">
-                  <img
-                    src={data.personal.portraitImage}
-                    alt={data.personal.name}
-                    className="w-full h-full object-cover contrast-110 transition-all duration-500"
-                    loading="lazy"
-                  />
+                  {data.personal.portraitImage ? (
+                    <img
+                      src={data.personal.portraitImage}
+                      alt={data.personal.name}
+                      className="w-full h-full object-cover contrast-110 transition-all duration-500"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-[#141414] text-[#E8E6E0] font-display text-4xl">
+                      {(data.personal.name || '?').trim().charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <div className="absolute bottom-3 left-3 text-white text-[10px] font-mono uppercase tracking-widest bg-black/50 px-2.5 py-1 rounded border border-white/10">
                     ENGINEERING & DESIGN

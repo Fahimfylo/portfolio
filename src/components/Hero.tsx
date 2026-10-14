@@ -94,12 +94,18 @@ export const Hero: React.FC = () => {
           >
             <div               className="relative w-full max-w-sm aspect-[4/5] rounded-2xl p-2 bg-[#E8E6DF] border border-[#111111]/10 shadow-[0_12px_40px_rgba(17,17,17,0.08)]">
               <div className="w-full h-full rounded-xl overflow-hidden relative group">
-                <img
-                  src={data.personal.portraitImage}
-                  alt={data.personal.name}
-                  className="w-full h-full object-cover contrast-105 group-hover:scale-105 transition-all duration-500 ease-out"
-                  loading="eager"
-                />
+                {data.personal.portraitImage ? (
+                  <img
+                    src={data.personal.portraitImage}
+                    alt={data.personal.name}
+                    className="w-full h-full object-cover contrast-105 group-hover:scale-105 transition-all duration-500 ease-out"
+                    loading="eager"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-[#111111] text-[#E8E6E0] font-display text-4xl">
+                    {(data.personal.name || '?').trim().charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
                 <div className="absolute bottom-3 left-3 right-3 text-white/90 text-xs font-mono uppercase tracking-widest flex justify-between items-center backdrop-blur-md bg-black/30 px-3 py-2 rounded-lg border border-white/10">
                   <span>SENIOR ENGINEER</span>

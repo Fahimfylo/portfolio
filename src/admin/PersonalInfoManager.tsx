@@ -15,6 +15,7 @@ export const PersonalInfoManager: React.FC = () => {
   const [aboutHeadline, setAboutHeadline] = useState('');
   const [aboutBio, setAboutBio] = useState('');
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,23 +38,29 @@ export const PersonalInfoManager: React.FC = () => {
     return () => { alive = false; };
   }, []);
 
-  const save = async () => {
-    const data = await getPortfolioData();
-    data.personal = {
-      name,
-      role,
-      heroSubtext,
-      availabilityStatus,
-      dateReadout,
-      portraitImage,
-      email,
-      cvUrl,
-      aboutHeadline,
-      aboutBio: aboutBio.split('\n').filter((l) => l.trim()),
-    };
-    await savePortfolioData(data);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const save = async (overrides?: Partial<{ portraitImage: string }>) => {
+    setError('');
+    try {
+      const data = await getPortfolioData();
+      data.personal = {
+        name,
+        role,
+        heroSubtext,
+        availabilityStatus,
+        dateReadout,
+        portraitImage,
+        email,
+        cvUrl,
+        aboutHeadline,
+        aboutBio: aboutBio.split('\n').filter((l) => l.trim()),
+        ...overrides,
+      };
+      await savePortfolioData(data);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e: any) {
+      setError(e?.message || 'Save failed. Please log in again.');
+    }
   };
 
   return (
@@ -64,9 +71,10 @@ export const PersonalInfoManager: React.FC = () => {
           <p className="text-xs font-mono text-[#888] mt-1">Update your profile details</p>
         </div>
         <div className="flex items-center gap-3">
+          {error && <span className="text-xs font-mono text-red-400">{error}</span>}
           {saved && <span className="text-xs font-mono text-emerald-400">Saved!</span>}
           <button
-            onClick={save}
+            onClick={() => save()}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono text-emerald-400 hover:bg-emerald-500/20 transition-colors"
           >
             <Save className="w-3.5 h-3.5" />
@@ -101,7 +109,14 @@ export const PersonalInfoManager: React.FC = () => {
           <Field label="Date Readout" value={dateReadout} onChange={setDateReadout} />
         </div>
 
-        <ImageUpload label="Portrait Image" value={portraitImage} onChange={setPortraitImage} />
+        <ImageUpload
+          label="Portrait Image"
+          value={portraitImage}
+          onChange={(url) => {
+            setPortraitImage(url);
+            save({ portraitImage: url });
+          }}
+        />
 
         <Field label="Portrait Image URL (alternative)" value={portraitImage} onChange={setPortraitImage} />
 
