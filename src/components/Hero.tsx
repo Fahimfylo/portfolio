@@ -58,7 +58,7 @@ export const Hero: React.FC = () => {
         </motion.div>
 
         {/* Content Row: Text + CTA on Left, Offset Framed Image on Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-end lg:-translate-y-[100px]">
           
           {/* Left Text Block */}
           <div className="lg:col-span-7 flex flex-col items-start space-y-8">
@@ -90,14 +90,14 @@ export const Hero: React.FC = () => {
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-5 relative mt-6 lg:mt-12 flex justify-center lg:justify-end"
+            className="lg:col-span-5 relative flex justify-center lg:justify-end"
           >
-            <div className="relative w-full max-w-sm aspect-[4/5] rounded-2xl p-2 bg-[#E8E6DF] border border-[#111111]/10 shadow-[0_12px_40px_rgba(17,17,17,0.08)] transform lg:translate-y-6">
+            <div               className="relative w-full max-w-sm aspect-[4/5] rounded-2xl p-2 bg-[#E8E6DF] border border-[#111111]/10 shadow-[0_12px_40px_rgba(17,17,17,0.08)]">
               <div className="w-full h-full rounded-xl overflow-hidden relative group">
                 <img
                   src={data.personal.portraitImage}
                   alt={data.personal.name}
-                  className="w-full h-full object-cover grayscale contrast-105 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500 ease-out"
+                  className="w-full h-full object-cover contrast-105 group-hover:scale-105 transition-all duration-500 ease-out"
                   loading="eager"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />

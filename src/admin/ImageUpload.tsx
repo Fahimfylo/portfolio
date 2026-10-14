@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, Loader } from 'lucide-react';
 import { uploadImage } from '../lib/storage';
 import { compressImage } from '../lib/imageUpload';
+import { ImageCropModal } from './ImageCropModal';
 
 interface ImageUploadProps {
   label: string;
@@ -13,14 +14,33 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ label, value, onChange
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = async (file: File | undefined) => {
+  const handleFile = (file: File | undefined) => {
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file');
+      return;
+    }
     setError('');
+    setCropFile(file);
+    setCropSrc(URL.createObjectURL(file));
+  };
+
+  const closeCrop = () => {
+    if (cropSrc) setTimeout(() => URL.revokeObjectURL(cropSrc), 1000);
+    setCropSrc(null);
+    setCropFile(null);
+    if (inputRef.current) inputRef.current.value = '';
+  };
+
+  const onCropConfirm = async (cropped: File) => {
+    closeCrop();
     setUploading(true);
     try {
-      const compressed = await compressImage(file);
+      const compressed = await compressImage(cropped);
       const uploaded = await uploadImage(compressed.data, compressed.contentType, compressed.filename);
       onChange(uploaded.url);
     } catch (e: any) {
@@ -94,12 +114,21 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ label, value, onChange
             <p className="text-xs font-mono text-[#888]">
               Drop an image here or <span className="text-emerald-400">browse</span>
             </p>
-            <p className="text-[10px] font-mono text-[#555]">Auto-resized to max 1600px</p>
+            <p className="text-[10px] font-mono text-[#555]">Crop &amp; auto-resize to max 1600px</p>
           </div>
         )}
       </div>
 
       {error && <p className="text-[11px] font-mono text-red-400">{error}</p>}
+
+      {cropSrc && cropFile && (
+        <ImageCropModal
+          src={cropSrc}
+          fileName={cropFile.name}
+          onCancel={closeCrop}
+          onConfirm={onCropConfirm}
+        />
+      )}
     </div>
   );
 };

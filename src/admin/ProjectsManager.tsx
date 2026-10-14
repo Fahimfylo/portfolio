@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, GripVertical, Save, X, ExternalLink } from 'lucide-react';
 import { getPortfolioData, savePortfolioData } from '../lib/storage';
+import { ImageUpload } from './ImageUpload';
 import type { ProjectItem } from '../content';
 
 const emptyProject: () => ProjectItem = () => ({
@@ -184,9 +185,12 @@ export const ProjectsManager: React.FC = () => {
 
           <TextArea label="Description" value={editData.description} onChange={(v) => updateField('description', v)} />
 
+          <div className="space-y-4">
+            <ImageUpload label="Preview Image" value={editData.previewImage} onChange={(v) => updateField('previewImage', v)} />
+            <ImageUpload label="Device Mockup Image" value={editData.deviceMockupImage} onChange={(v) => updateField('deviceMockupImage', v)} />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Preview Image URL" value={editData.previewImage} onChange={(v) => updateField('previewImage', v)} />
-            <Field label="Device Mockup Image URL" value={editData.deviceMockupImage} onChange={(v) => updateField('deviceMockupImage', v)} />
             <Field label="Live URL" value={editData.liveUrl} onChange={(v) => updateField('liveUrl', v)} />
             <Field label="GitHub URL" value={editData.githubUrl} onChange={(v) => updateField('githubUrl', v)} />
           </div>
@@ -205,12 +209,6 @@ export const ProjectsManager: React.FC = () => {
             <TextArea label="Outcome" value={editData.technicalNarrative.outcome} onChange={(v) => updateNarrative('outcome', v)} rows={3} />
           </div>
 
-          {editData.previewImage && (
-            <div className="mt-4">
-              <p className="text-[11px] font-mono uppercase text-[#888] mb-2">Preview</p>
-              <img src={editData.previewImage} alt="Preview" className="w-full h-40 object-cover rounded-lg border border-white/10" />
-            </div>
-          )}
         </div>
       )}
 

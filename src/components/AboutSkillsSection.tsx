@@ -34,7 +34,7 @@ export const AboutSkillsSection: React.FC = () => {
                   <img
                     src={data.personal.portraitImage}
                     alt={data.personal.name}
-                    className="w-full h-full object-cover grayscale contrast-110 group-hover:grayscale-0 transition-all duration-500"
+                    className="w-full h-full object-cover contrast-110 transition-all duration-500"
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
